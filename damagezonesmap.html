@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Mapbox Raster Overlay Example</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.css' rel='stylesheet' />
+    <style>
+    body { margin: 0; padding: 0; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    #legend {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Aligns children (gradient and labels) in the center */
+    position: absolute;
+    background-color: rgba(255, 255, 255, 0.6);
+    padding: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    z-index: 2;
+    left: 30px;
+    bottom: 100px;
+    width: 60px;
+    border-radius: 8px;
+    font-family: 'Arial', sans-serif; /* Example font, you can choose another */
+    color: rgb(33, 29, 29); /* Font color set to white */
+}
+
+#legend-gradient {
+    display: block;
+    height: 500px;
+    width: 40px;
+    background: linear-gradient(to top, #000066, #660066, #cc0033, #ff9933, #ffff66);
+    margin: 20px 0; /* Add some space above and below the gradient */
+    border-radius: 5px;
+}
+
+#legend-labels {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center the gradient and labels horizontally */
+    position: relative;
+    width: 60px; /* Match the width of the legend */
+    height: 500px; /* Height should be enough to fit the gradient and labels */
+
+.legend-label {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    left: 50%;
+    transform: translateX(-50%); /* Center the label horizontally */
+    color: rgb(0, 0, 0); /* Set the text color to white */
+}
+
+
+.legend-label.top { /* Position the 'High' label at the top */
+    top: -5px; /* Adjust so it's just above the gradient */
+}
+
+.legend-label.bottom { /* Position the 'Low' label at the bottom */
+    bottom: -5px; /* Adjust so it's just below the gradient */
+}
+
+.mapboxgl-popup .mapboxgl-popup-content {
+    background: #ffffff6b !important;
+    border-radius: 3px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.1);
+    padding: 10px 10px 15px;
+    pointer-events: auto;
+    position: relative;
+}
+
+.mapboxgl-popup-tip {
+    border-top-color: rgba(255, 255, 255, 0.8); /* Match the tip color with the content background */
+}
+    </style>
+</head>
+<body>
+<div id='map'></div>
+<div id="legend">
+    <h4>HDZ</h4>
+    
+    <div id="legend-labels">
+        <span class="legend-label top">100%</span>
+        <div id="legend-gradient"></div>
+        <span class="legend-label bottom">0%</span>
+    </div>
+</div>
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoicDRyazNyaGsiLCJhIjoiY2x0am9hNHA3MHN6ajJodGtnb3ptM3RzYiJ9.dTtS_ooHdd6W5ErJv_N-5g';
+var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/p4rk3rhk/cltpugtkf004c01pn161iaim9',
+    center: [9.88405,45.24845],
+    zoom: 14
+});
+
+// Define two bounding boxes
+var bbox1 = [[9.880, 45.240], [9.890, 45.250]]; // [southwest coordinates], [northeast coordinates]
+var bbox2 = [[9.866752037313717 , 45.24744950581726], [9.869385071473943, 45.25045216069876]];
+
+
+map.on('load', function() {
+    map.addSource('myRaster', {
+        type: 'raster',
+        url: 'mapbox://p4rk3rhk.0001',
+        tileSize: 256
+    });
+
+    map.addSource('myRaster2', {
+        type: 'raster',
+        url: 'mapbox://p4rk3rhk.dikgihgf',
+        tileSize: 256
+    });
+
+    map.addSource('myRaster3', {
+        type: 'raster',
+        url: 'mapbox://p4rk3rhk.cltpsp26k0ili1mokfeharj3k-9kznf',
+        tileSize: 256
+    });
+
+    map.addLayer({
+        id: 'myRasterLayer',
+        type: 'raster',
+        source: 'myRaster',
+        paint: {
+            'raster-opacity': 1 // Ensure full opacity
+        }
+    });
+    map.addLayer({
+        id: 'myRasterLayer2',
+        type: 'raster',
+        source: 'myRaster2',
+        paint: {
+            'raster-opacity': 1 // Ensure full opacity
+        }
+    });
+    map.addLayer({
+        id: 'myRasterLayer3',
+        type: 'raster',
+        source: 'myRaster3',
+        paint: {
+            'raster-opacity': 1 // Ensure full opacity
+        }
+    });
+
+    // Dynamically inject CSS for pop-up transparency
+    var style = document.createElement('style');
+    style.type = 'text/css';
+    style.innerHTML = `
+    .mapboxgl-popup .mapboxgl-popup-content {
+        background: rgba(255, 255, 255, 0.7) !important;
+    }
+    .mapboxgl-popup-tip {
+        border-top-color: rgba(255, 255, 255, 0.7) !important;
+    }`;
+    document.head.appendChild(style);
+});
+
+map.on('click', function(e) {
+    var lngLat = e.lngLat;
+
+    if (lngLat.lng >= bbox1[0][0] && lngLat.lng <= bbox1[1][0] &&
+        lngLat.lat >= bbox1[0][1] && lngLat.lat <= bbox1[1][1]) {
+        // The click is within bbox1
+        new mapboxgl.Popup()
+            .setLngLat(lngLat)
+            .setHTML('<h2>Azienda F.17 M.39</h2><p>Superficie 6.68 ettari</p>')
+            .addTo(map);
+    } else if (lngLat.lng >= bbox2[0][0] && lngLat.lng <= bbox2[1][0] &&
+               lngLat.lat >= bbox2[0][1] && lngLat.lat <= bbox2[1][1]) {
+        // The click is within bbox2
+        new mapboxgl.Popup()
+            .setLngLat(lngLat)
+            .setHTML('<h2>Azienda F.13 M.10</h2><p>Superficie 5.76 ettari</p>')
+            .addTo(map);
+    }
+});
+
+
+// Add zoom and rotation controls to the map
+var nav = new mapboxgl.NavigationControl();
+map.addControl(nav, 'top-right');
+</script>
+</body>
+</html>
